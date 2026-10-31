@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Reto 78 KG">
-<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
 <link rel="manifest" href="./manifest.json">
 <title>Mi Reto 78 KG</title>
 <style>
@@ -94,6 +94,31 @@ canvas{width:100%;height:180px;display:block}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:23px 23px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));width:100%;max-width:650px;max-height:85vh;overflow:auto}
 .toast{position:fixed;bottom:95px;left:50%;transform:translateX(-50%);background:#e4f8eb;color:#12271b;border-radius:30px;padding:11px 17px;font-size:12px;font-weight:750;z-index:30;display:none;white-space:nowrap;box-shadow:0 5px 30px #0005}
 .hidden{display:none!important}
+
+/* Mejoras de legibilidad, estados y accesibilidad */
+.safe-top{padding-top:env(safe-area-inset-top)}
+.welcome{padding:2px 19px 10px;color:var(--muted);font-size:13px}
+.welcome strong{color:var(--text);font-size:15px}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:30px;font-size:10px;font-weight:850;white-space:nowrap}
+.status-green{background:#183d2b;color:#8debb4;border:1px solid #397a55}
+.status-red{background:#49251f;color:#ffb1a2;border:1px solid #8a493e}
+.status-yellow{background:#4a3c1d;color:#ffdf8b;border:1px solid #8a7135}
+.fine-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.fine-stat{background:#111b15;border:1px solid var(--line);border-radius:13px;padding:11px}
+.fine-stat strong{display:block;font-size:20px;margin-top:4px}
+.fine-row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}
+.fine-row:last-child{border:0}
+.settings-section{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.settings-section h3{margin-bottom:8px}
+.quick-links{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.quick-links button{font-size:11px;padding:11px 5px}
+#chart{height:250px;image-rendering:auto;touch-action:pan-y}
+.chart-note{margin-top:5px}
+.achievement-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.achievement{border:1px solid #477553;background:#1c3527;color:#b0f0ca;padding:7px 9px;border-radius:10px;font-size:11px}
+.btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
 </style>
 </head>
 <body>
@@ -105,9 +130,18 @@ canvas{width:100%;height:180px;display:block}
  </div>
  <button class="btn ghost" id="settingsBtn" aria-label="Ajustes">⚙️</button>
 </header>
+<div class="welcome" id="welcomeLine">Tu progreso, a tu ritmo.</div>
 
 <!-- PANTALLA PESO -->
 <section id="peso" class="screen active">
+ <div class="card">
+  <div class="row"><h2 style="margin:0">Acceso rápido</h2><span class="small muted">Tus secciones</span></div>
+  <div class="quick-links" style="margin-top:12px">
+   <button class="btn primary" data-screen="peso">⚖️ Peso</button>
+   <button class="btn" data-screen="metas">🎯 Metas</button>
+   <button class="btn" data-screen="actividad">🏃 Actividad</button>
+  </div>
+ </div>
  <div class="card hero-card">
   <div class="row">
    <span class="eyebrow">PESO ACTUAL</span>
@@ -137,6 +171,15 @@ canvas{width:100%;height:180px;display:block}
  </div>
 
  <div class="card">
+  <div class="row"><h2 style="margin:0">Resumen de progreso</h2><span class="pill" id="streakBadge">0 semanas</span></div>
+  <div class="stats">
+   <div class="stat"><span class="label">DESDE EL INICIO</span><strong id="totalLost">0.0 kg</strong></div>
+   <div class="stat"><span class="label">ÚLTIMO CAMBIO</span><strong id="weeklyChange">—</strong></div>
+  </div>
+  <p class="small muted" id="weeklySummary" style="margin-bottom:0">Registra tu peso para ver tu resumen.</p>
+ </div>
+
+ <div class="card">
   <div class="row">
    <div><div class="eyebrow">TU OBJETIVO ACTUAL</div><h2 style="margin-top:6px" id="currentGoal">90.7 kg</h2></div>
    <span class="pill" id="currentWeekLabel">SEMANA 1</span>
@@ -160,7 +203,9 @@ canvas{width:100%;height:180px;display:block}
 
  <div class="card">
   <div class="row"><h2>Evolución</h2><span class="small muted">Tu historial</span></div>
-  <canvas id="chart" width="560" height="210"></canvas>
+  <canvas id="chart" width="560" height="250" aria-label="Gráfica de evolución con fechas de cada pesaje"></canvas>
+  <p class="small muted chart-note">Cada punto muestra la fecha y el peso registrado. Toca un punto para ver sus detalles.</p>
+  <div id="achievementList" class="achievement-list"></div>
   <div id="history"></div>
  </div>
 </section>
@@ -226,16 +271,57 @@ canvas{width:100%;height:180px;display:block}
     <option value="0">Domingo</option>
    </select>
   </label>
-  <button class="btn primary full" id="calendarReminder">Añadir recordatorio al calendario de mi iPhone</button>
-  <p class="small muted">Se creará un evento semanal con una alerta a las 7:00 a. m. Importa el archivo descargado en Calendario.</p>
+  <button class="btn primary full" id="calendarReminder">Descargar calendario actualizado (.ics)</button>
+  <p class="small muted">Incluye los 18 pesajes, objetivos semanales y alertas 30 minutos antes. Si cambias el día, genera e importa un archivo nuevo. El archivo usa identificadores estables; algunos calendarios pueden requerir eliminar la serie anterior antes de volver a importarla.</p>
+
+  <div class="settings-section">
+   <h3>Sistema de multas</h3>
+   <p class="small muted">Solo se evalúa una semana cuando llega su día de pesaje y existe un registro dentro de esa semana. Sin registro no hay multa.</p>
+   <div class="row" style="margin-top:12px"><label for="finesEnabled" style="margin:0;color:var(--text)">Activar multas</label><input type="checkbox" id="finesEnabled" style="width:22px;height:22px;accent-color:var(--green)"></div>
+   <label>Importe por semana incumplida (USD)
+    <input id="fineAmount" type="number" min="0" max="10000" step="0.01" inputmode="decimal">
+   </label>
+   <div class="fine-summary">
+    <div class="fine-stat"><span class="label">TOTAL ACUMULADO</span><strong id="fineTotal">$0.00</strong></div>
+    <div class="fine-stat"><span class="label">SEMANAS SANCIONADAS</span><strong id="fineWeeks">0</strong></div>
+   </div>
+   <div id="fineHistory" style="margin-top:10px"></div>
+   <button class="btn danger full" id="resetFines" style="margin-top:10px">Reiniciar contador de multas</button>
+  </div>
+
+  <div class="settings-section">
+   <h3>RESPALDO Y RESTAURACIÓN</h3>
+   <p class="small muted">El respaldo incluye registros, actividades, metas, multas, ajustes y preferencias. Puedes llevarlo a otro iPhone o navegador.</p>
+   <button class="btn primary full" id="exportData">Exportar todos mis datos</button>
+   <button class="btn ghost full" id="downloadBackup" style="margin-top:8px">Descargar respaldo JSON</button>
+   <label>Importar mis datos
+    <input type="file" id="importData" accept=".json,application/json">
+   </label>
+   <p class="small muted">Antes de restaurar se guardará automáticamente una copia de los datos actuales en este dispositivo.</p>
+   <button class="btn danger full" id="resetData">Borrar todos mis registros</button>
+  </div>
+
+  <div class="settings-section">
+   <h3>Atajos de Apple</h3>
+   <p class="small muted">Puedes crear un atajo que abra una sección o precargue un peso para que confirmes el registro.</p>
+   <div class="grid">
+    <button class="btn ghost" id="copyWeightLink">Copiar enlace Peso</button>
+    <button class="btn ghost" id="copyMetasLink">Copiar enlace Metas</button>
+    <button class="btn ghost" id="copyActivityLink">Copiar enlace Actividad</button>
+    <button class="btn ghost" id="createShortcut">Abrir Atajos</button>
+   </div>
+   <p class="small muted">Para registrar desde Atajos: solicita un número, construye el enlace con ?pantalla=peso&amp;peso=VALOR y usa “Abrir URL”. La aplicación rellenará el campo, pero siempre tendrás que confirmar el guardado.</p>
+  </div>
+
+  <div class="settings-section">
+   <h3>Notificaciones y privacidad</h3>
+   <p class="small muted">Los avisos web en iPhone requieren iOS/iPadOS 16.4 o posterior, instalación en pantalla de inicio y un servidor Web Push. Esta versión no tiene servidor de notificaciones; por eso no solicita permisos que no puede utilizar. Apple Calendar es el recordatorio disponible sin servidor.</p>
+   <p class="small muted">Apple Salud y Apple Watch requieren una aplicación nativa con HealthKit. Esta PWA no accede directamente a esos datos.</p>
+  </div>
+
   <div class="row" style="margin-top:16px"><span>Sonidos y vibración</span><input type="checkbox" id="soundToggle" checked style="width:22px;height:22px;accent-color:var(--green)"></div>
-  <div class="row" style="margin-top:17px"><strong>Respaldo de mis registros</strong></div>
-  <button class="btn ghost full" id="exportData">Exportar mis datos</button>
-  <label>Importar respaldo
-   <input type="file" id="importData" accept=".json,application/json">
-  </label>
-  <button class="btn danger full" id="resetData">Borrar todos mis registros</button>
-  <p class="small muted">Los datos se guardan en este dispositivo. Conserva un respaldo si vas a cambiar de teléfono o navegador.</p>
+  <button class="btn ghost full" id="shareReport" style="margin-top:12px">Compartir resumen de progreso</button>
+  <p class="small muted">Los datos principales se guardan localmente en este dispositivo. Exporta respaldos con regularidad y guárdalos en Archivos o iCloud Drive.</p>
  </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -245,14 +331,46 @@ canvas{width:100%;height:180px;display:block}
 "use strict";
 const START='2026-12-01',END='2027-03-31',INITIAL=90.7,TARGET=78;
 const KEY='mi-reto-78kg-v1';
+const BACKUP_KEY='mi-reto-78kg-preimport-backup';
+const FORMAT_VERSION=2;
 const DAYS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-let data={logs:[],checks:{},unit:'kg',weighDay:2,sound:true};
+const defaultData=()=>({
+ schemaVersion:2,logs:[],checks:{},unit:'kg',weighDay:2,sound:true,
+ fines:{enabled:true,amount:20,records:[],processedWeeks:[]},
+ preferences:{},achievements:[]
+});
+function normalizeData(source){
+ const base=defaultData(),x=source&&typeof source==='object'?source:{};
+ const merged={...base,...x};
+ const normalizedLogs=Array.isArray(x.logs)?x.logs.filter(log=>log&&typeof log.date==='string'&&Number.isFinite(Number(log.weight))).map(log=>({date:log.date,weight:Number(log.weight)})):[];
+ const byDate=new Map();for(const log of normalizedLogs)byDate.set(log.date,log);
+ merged.logs=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
+ merged.checks=x.checks&&typeof x.checks==='object'&&!Array.isArray(x.checks)?x.checks:{};
+ merged.unit=x.unit==='lb'?'lb':'kg';
+ merged.weighDay=Number.isInteger(Number(x.weighDay))&&Number(x.weighDay)>=0&&Number(x.weighDay)<=6?Number(x.weighDay):2;
+ merged.sound=x.sound!==false;
+ merged.fines={...base.fines,...(x.fines&&typeof x.fines==='object'?x.fines:{})};
+ merged.fines.enabled=merged.fines.enabled!==false;
+ merged.fines.amount=Number.isFinite(Number(merged.fines.amount))&&Number(merged.fines.amount)>=0?Number(merged.fines.amount):20;
+ merged.fines.records=Array.isArray(merged.fines.records)?merged.fines.records:[];
+ const seenFineWeeks=new Set();
+ merged.fines.records=merged.fines.records.filter(item=>{
+  if(!item||typeof item.weekKey!=='string'||seenFineWeeks.has(item.weekKey))return false;
+  seenFineWeeks.add(item.weekKey);return true;
+ });
+ merged.fines.processedWeeks=Array.isArray(merged.fines.processedWeeks)?[...new Set(merged.fines.processedWeeks.filter(x=>typeof x==='string'))]:[];
+ for(const item of merged.fines.records)if(!merged.fines.processedWeeks.includes(item.weekKey))merged.fines.processedWeeks.push(item.weekKey);
+ merged.preferences=x.preferences&&typeof x.preferences==='object'?x.preferences:{};
+ merged.achievements=Array.isArray(x.achievements)?x.achievements:[];
+ merged.schemaVersion=2;
+ return merged;
+}
+let data=defaultData();
 try{
- const old=JSON.parse(localStorage.getItem(KEY)||'null');
- if(old)data={...data,...old};
-}catch(e){}
-if(!Array.isArray(data.logs))data.logs=[];
-if(!data.checks)data.checks={};
+ const stored=JSON.parse(localStorage.getItem(KEY)||'null');
+ if(stored){data=normalizeData(stored);try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+}catch(e){/* No se reemplaza ni borra el valor original ante un JSON ilegible. */}
+
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
 const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -268,6 +386,57 @@ const save=()=>{
  try{localStorage.setItem(KEY,JSON.stringify(data));}
  catch(e){toast('No se pudo guardar. Exporta un respaldo.');}
 };
+function weekTarget(index){return INITIAL-(INITIAL-TARGET)*index/17;}
+function weekKey(index){return 'week-'+scheduledDate(index);}
+function weekRangeEnd(date){return iso(new Date(parse(date).getTime()+6*86400000));}
+function getWeekEvaluation(index){
+ const date=scheduledDate(index);
+ if(today()<date)return {status:'pending',date,log:null,target:weekTarget(index)};
+ const end=weekRangeEnd(date);
+ const log=sorted().filter(x=>x.date>=date&&x.date<=end&&x.date<=today()).at(-1)||null;
+ if(!log)return {status:'pending',date,log:null,target:weekTarget(index)};
+ return {status:log.weight<=weekTarget(index)?'good':'bad',date,log,target:weekTarget(index)};
+}
+function evaluateFines(){
+ let changed=false;
+ for(let i=0;i<18;i++){
+  const result=getWeekEvaluation(i),key=weekKey(i);
+  if(result.status!=='bad'||data.fines.processedWeeks.includes(key)||data.fines.records.some(item=>item.weekKey===key))continue;
+  data.fines.processedWeeks.push(key);
+  if(data.fines.enabled){
+   data.fines.records.push({id:'fine-'+key,weekIndex:i,weekKey:key,date:result.date,weightKg:result.log.weight,targetKg:result.target,amount:Number(data.fines.amount),currency:'USD',createdAt:new Date().toISOString()});
+  }
+  changed=true;
+ }
+ if(changed)save();
+}
+function money(value){return '$'+Number(value||0).toFixed(2);}
+function fineTotal(){return data.fines.records.reduce((sum,item)=>sum+Number(item.amount||0),0);}
+function renderFines(){
+ const enabled=$('finesEnabled'),amount=$('fineAmount');if(!enabled)return;
+ enabled.checked=data.fines.enabled;amount.value=Number(data.fines.amount).toFixed(2);
+ $('fineTotal').textContent=money(fineTotal());$('fineWeeks').textContent=String(data.fines.records.length);
+ $('fineHistory').innerHTML=data.fines.records.length
+  ?data.fines.records.slice().sort((a,b)=>a.weekIndex-b.weekIndex).map(item=>`<div class="fine-row"><span>Semana ${Number(item.weekIndex)+1} · ${fmt(item.date)}<br><span class="muted">Peso ${show(Number(item.weightKg))} kg · Meta ${show(Number(item.targetKg))} kg</span></span><strong>${money(item.amount)}</strong></div>`).join('')
+  :'<div class="empty">Todavía no hay semanas sancionadas.</div>';
+}
+function renderGreeting(){
+ const hour=new Date().getHours(),greeting=hour<12?'Buenos días':hour<19?'Buenas tardes':'Buenas noches';
+ const last=latest(),lost=INITIAL-(last?last.weight:INITIAL);
+ $('welcomeLine').innerHTML=`<strong>${greeting}.</strong> ${lost>0?'Has avanzado '+show(lost)+' '+data.unit+' desde el inicio.':'Cada registro cuenta. Vamos paso a paso.'}`;
+ const logs=sorted();$('totalLost').textContent=show(lost)+' '+data.unit;
+ if(logs.length>=2){
+  const delta=logs.at(-1).weight-logs.at(-2).weight;
+  $('weeklyChange').textContent=(delta>0?'+':'')+show(delta)+' '+data.unit;
+  $('weeklySummary').textContent=delta<0?'Tu último registro está por debajo del anterior. Buen trabajo manteniendo la constancia.':delta>0?'Tu último registro está por encima del anterior. Una variación aislada no define tu progreso.':'Tu último registro se mantiene igual que el anterior.';
+ }else{$('weeklyChange').textContent='—';$('weeklySummary').textContent='Cuando tengas dos registros podrás comparar tu evolución.';}
+ let streak=0;
+ for(let i=Math.min(currentIndex(),17);i>=0;i--){const ev=getWeekEvaluation(i);if(ev.log)streak++;else break;}
+ $('streakBadge').textContent=streak+' '+(streak===1?'semana':'semanas')+' con pesaje';
+ const milestones=[1,3,5,7,10,12.7].filter(n=>lost>=n);
+ $('achievementList').innerHTML=milestones.length?milestones.map(n=>`<span class="achievement">✓ ${n===12.7?'Meta final':n+' kg perdidos'}</span>`).join(''):'<span class="small muted">Tus logros aparecerán conforme avances.</span>';
+}
+
 function toast(message){
  const t=$('toast');t.textContent=message;t.style.display='block';
  clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.display='none',2400);
@@ -302,6 +471,7 @@ function nextWeighDate(){
 function currentTarget(){return INITIAL-(INITIAL-TARGET)*currentIndex()/17;}
 function currentWeekKey(){return 'week-'+currentIndex();}
 function render(){
+ evaluateFines();
  const last=latest(),weight=last?last.weight:INITIAL;
  const lost=INITIAL-weight;
  const progress=Math.max(0,Math.min(100,lost/(INITIAL-TARGET)*100));
@@ -337,6 +507,8 @@ function render(){
  $('goalProgressBar').style.width=progress+'%';
  renderWeeks(idx);
  renderActivities(idx);
+ renderGreeting();
+ renderFines();
  renderHistory();
  drawChart();
  $('weighDay').value=String(data.weighDay);
@@ -345,12 +517,14 @@ function render(){
 function renderWeeks(idx){
  let html='';
  for(let i=0;i<18;i++){
-  const date=scheduledDate(i);
-  const log=sorted().filter(x=>x.date>=date&&x.date<=iso(new Date(parse(date).getTime()+6*86400000))).at(-1);
+  const date=scheduledDate(i),ev=getWeekEvaluation(i);
+  const status=ev.status==='good'?'<span class="status-pill status-green">● CUMPLIDA</span>':ev.status==='bad'?'<span class="status-pill status-red">● INCUMPLIDA</span>':'<span class="status-pill status-yellow">● PENDIENTE</span>';
+  const log=ev.log;
   html+=`<div class="week ${i===idx?'current':''}">
    <div class="row"><strong>Semana ${i+1} ${i===idx?'· ACTUAL':''}</strong><span class="small muted">${fmt(date)}</span></div>
-   <div class="row" style="margin-top:9px"><span class="small muted">Objetivo orientativo</span><span class="target">${show(INITIAL-(INITIAL-TARGET)*i/17)} ${data.unit}</span></div>
-   <div class="row" style="margin-top:5px"><span class="small muted">Peso registrado</span><strong>${log?show(log.weight)+' '+data.unit:'Pendiente'}</strong></div>
+   <div class="row" style="margin-top:9px"><span class="small muted">Objetivo orientativo</span><span class="target">${show(weekTarget(i))} ${data.unit}</span></div>
+   <div class="row" style="margin-top:7px"><span class="small muted">Peso registrado</span><strong>${log?show(log.weight)+' '+data.unit:'Pendiente'}</strong></div>
+   <div class="row" style="margin-top:9px">${status}<span class="small muted">${log?'Evaluación '+fmt(log.date):'Sin evaluación'}</span></div>
   </div>`;
  }
  $('weekList').innerHTML=html;
@@ -384,18 +558,27 @@ function renderHistory(){
  $('history').innerHTML=sorted().length?'<div class="section-title">REGISTROS ANTERIORES</div>'+sorted().slice().reverse().map(x=>`<div class="history-row"><span>${fmt(x.date)}</span><strong>${show(x.weight)} ${data.unit}</strong><button class="btn ghost" data-delete="${x.date}" style="padding:6px 9px">×</button></div>`).join(''):'<div class="empty">Aquí aparecerán tus pesajes anteriores.</div>';
 }
 function drawChart(){
- const c=$('chart'),ctx=c.getContext('2d'),arr=[{date:START,weight:INITIAL},...sorted()];
- ctx.clearRect(0,0,c.width,c.height);
- if(arr.length===1){ctx.fillStyle='#a5b4a9';ctx.font='15px sans-serif';ctx.fillText('Tu progreso aparecerá aquí',145,105);return;}
- const vals=arr.filter((x,i)=>i===0||x.date!==arr[i-1].date);
+ const c=$('chart'),ctx=c.getContext('2d'),rect=c.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);
+ const W=Math.max(300,rect.width||560),H=250;c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+ const logEntries=sorted();
+ const vals=(logEntries.some(x=>x.date===START)?[]:[{date:START,weight:INITIAL}]).concat(logEntries).filter((x,i,a)=>i===0||x.date!==a[i-1].date);
+ if(vals.length===1){ctx.fillStyle='#a5b4a9';ctx.font='14px -apple-system, sans-serif';ctx.textAlign='center';ctx.fillText('Tu progreso aparecerá aquí',W/2,H/2);return;}
  const min=Math.min(TARGET,...vals.map(x=>x.weight))-1,max=Math.max(INITIAL,...vals.map(x=>x.weight))+1;
- ctx.strokeStyle='#34453a';ctx.lineWidth=1;
- for(let i=0;i<4;i++){let y=20+i*55;ctx.beginPath();ctx.moveTo(35,y);ctx.lineTo(535,y);ctx.stroke();}
- ctx.strokeStyle='#69d99e';ctx.lineWidth=4;ctx.beginPath();
- vals.forEach((x,i)=>{let px=35+i/Math.max(1,vals.length-1)*500,py=20+(max-x.weight)/(max-min)*165;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});
- ctx.stroke();
- vals.forEach((x,i)=>{let px=35+i/Math.max(1,vals.length-1)*500,py=20+(max-x.weight)/(max-min)*165;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fillStyle='#69d99e';ctx.fill();});
- ctx.fillStyle='#a5b4a9';ctx.font='12px sans-serif';ctx.fillText(show(max)+' '+data.unit,35,13);ctx.fillText(show(min)+' '+data.unit,35,207);
+ const left=48,right=W-18,top=25,bottom=H-80,plotH=bottom-top,plotW=right-left;
+ const firstTime=parse(vals[0].date).getTime(),lastTime=parse(vals.at(-1).date).getTime();
+ const xAt=i=>left+(lastTime===firstTime?0:(parse(vals[i].date).getTime()-firstTime)/(lastTime-firstTime))*plotW,yAt=w=>top+(max-w)/(max-min)*plotH;
+ ctx.font='11px -apple-system, sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+ for(let i=0;i<=4;i++){const y=top+i*plotH/4,v=max-(max-min)*i/4;ctx.strokeStyle='#34453a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();ctx.fillStyle='#a5b4a9';ctx.fillText(show(v),left-9,y);}
+ ctx.beginPath();vals.forEach((item,i)=>{const x=xAt(i),y=yAt(item.weight);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+ ctx.strokeStyle='#69d99e';ctx.lineWidth=2.8;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+ vals.forEach((item,i)=>{
+  const x=xAt(i),y=yAt(item.weight);ctx.beginPath();ctx.arc(x,y,4.2,0,Math.PI*2);ctx.fillStyle='#b0f0ca';ctx.fill();ctx.strokeStyle='#101712';ctx.lineWidth=1.5;ctx.stroke();
+  const d=parse(item.date),label=pad(d.getDate())+'/'+pad(d.getMonth()+1);
+  ctx.save();ctx.translate(x,bottom+31);ctx.rotate(-Math.PI/2);ctx.fillStyle='#e7f4eb';ctx.font='9px -apple-system, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,0,0);ctx.restore();
+ });
+ ctx.fillStyle='#a5b4a9';ctx.font='10px -apple-system, sans-serif';ctx.textAlign='left';ctx.fillText('Inicio',left,H-8);ctx.textAlign='right';ctx.fillText('Último registro',right,H-8);
+ c._chartPoints=vals.map((item,i)=>({x:xAt(i),y:yAt(item.weight),date:item.date,weight:item.weight}));
+ c.title=vals.map(item=>fmt(item.date)+': '+show(item.weight)+' '+data.unit).join(' | ');
 }
 function switchScreen(id){
  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
@@ -403,6 +586,14 @@ function switchScreen(id){
  window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>{sound();switchScreen(b.dataset.screen)}));
+$('chart').addEventListener('click',e=>{
+ const rect=$('chart').getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top,points=$('chart')._chartPoints||[];
+ if(!points.length)return;
+ const point=points.reduce((best,p)=>Math.hypot(p.x-x,p.y-y)<Math.hypot(best.x-x,best.y-y)?p:best,points[0]);
+ if(Math.hypot(point.x-x,point.y-y)<28)toast(fmt(point.date)+' · '+show(point.weight)+' '+data.unit);
+});
+window.addEventListener('resize',()=>{if($('peso').classList.contains('active'))drawChart()});
+
 $('saveWeight').addEventListener('click',()=>{
  const n=Number($('weightInput').value);
  if(!Number.isFinite(n)||n<30||n>300){$('weightMessage').textContent='Introduce un peso válido.';return;}
@@ -429,51 +620,130 @@ $('history').addEventListener('click',e=>{
 $('settingsBtn').onclick=()=>{$('settingsModal').classList.add('open');sound()};
 $('closeSettings').onclick=()=>$('settingsModal').classList.remove('open');
 $('settingsModal').addEventListener('click',e=>{if(e.target===$('settingsModal'))$('settingsModal').classList.remove('open')});
-$('weighDay').onchange=()=>{data.weighDay=Number($('weighDay').value);save();render();toast('Día de pesaje actualizado')};
+$('weighDay').onchange=()=>{data.weighDay=Number($('weighDay').value);save();render();toast('Día actualizado. Descarga el calendario para reflejar el cambio.')};
 $('soundToggle').onchange=()=>{data.sound=$('soundToggle').checked;save();if(data.sound)sound();toast(data.sound?'Sonidos activados':'Sonidos desactivados')};
 
+
+function backupObject(){
+ const snapshot=JSON.parse(JSON.stringify(data));
+ return {app:'mi-reto-78kg',formatVersion:FORMAT_VERSION,backupId:(window.crypto&&window.crypto.randomUUID)?window.crypto.randomUUID():'backup-'+Date.now(),exportedAt:new Date().toISOString(),data:snapshot};
+}
+function dateStamp(){return today();}
 function download(filename,content,type){
  const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+async function exportBackup(shareFirst){
+ const json=JSON.stringify(backupObject(),null,2),filename='mi-reto-78kg-backup-'+dateStamp()+'.json';
+ if(shareFirst&&navigator.share&&navigator.canShare){
+  try{const file=new File([json],filename,{type:'application/json'});if(navigator.canShare({files:[file]})){await navigator.share({title:'Respaldo Mi Reto 78 KG',files:[file]});toast('Respaldo compartido.');return;}}
+  catch(err){if(err&&err.name==='AbortError')return;}
+ }
+ download(filename,json,'application/json;charset=utf-8');toast('Respaldo preparado. Guárdalo en Archivos o iCloud Drive.');
+}
+function validateBackup(parsed){
+ let incoming;
+ if(parsed&&parsed.app==='mi-reto-78kg'&&parsed.data&&typeof parsed.data==='object'){
+  if(!Number.isInteger(parsed.formatVersion)||parsed.formatVersion<1||parsed.formatVersion>FORMAT_VERSION)throw Error('Versión de respaldo incompatible.');
+  if(parsed.formatVersion>=2&&(!parsed.backupId||!parsed.exportedAt||Number.isNaN(Date.parse(parsed.exportedAt))))throw Error('Faltan los metadatos del respaldo.');
+  incoming=parsed.data;
+ }else if(parsed&&Array.isArray(parsed.logs)&&parsed.checks&&typeof parsed.checks==='object')incoming=parsed;
+ else throw Error('El archivo no tiene el formato de Mi Reto 78 KG.');
+ if(!Array.isArray(incoming.logs)||!incoming.checks||typeof incoming.checks!=='object'||Array.isArray(incoming.checks))throw Error('La estructura del respaldo está incompleta.');
+ if(incoming.unit!==undefined&&!['kg','lb'].includes(incoming.unit))throw Error('La unidad de peso no es compatible.');
+ if(incoming.weighDay!==undefined&&(!Number.isInteger(Number(incoming.weighDay))||Number(incoming.weighDay)<0||Number(incoming.weighDay)>6))throw Error('El día de pesaje no es válido.');
+ for(const [week,checks] of Object.entries(incoming.checks)){
+  if(!/^week-\d+$/.test(week)||!checks||typeof checks!=='object'||Array.isArray(checks))throw Error('Hay una semana de actividad inválida.');
+  for(const [index,value] of Object.entries(checks))if(!['0','1','2','3','4','5'].includes(index)||typeof value!=='boolean')throw Error('Hay una actividad con formato inválido.');
+ }
+ for(const log of incoming.logs){
+  if(!log||typeof log.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(log.date)||!Number.isFinite(Number(log.weight))||Number(log.weight)<30||Number(log.weight)>300)throw Error('Hay un registro de peso inválido.');
+  const dt=new Date(log.date+'T12:00:00');if(Number.isNaN(dt.getTime())||iso(dt)!==log.date)throw Error('Hay una fecha inválida.');
+  if(log.date>today())throw Error('El respaldo contiene un pesaje con fecha futura.');
+ }
+ const migrated=normalizeData(incoming);
+ for(const checks of Object.values(migrated.checks)){if(!checks||typeof checks!=='object'||Array.isArray(checks))throw Error('Hay actividades con formato inválido.');}
+ for(const fine of migrated.fines.records){
+  if(!fine||!/^week-(?:\d{4}-\d{2}-\d{2}|(?:[0-9]|1[0-7]))$/.test(fine.weekKey)||!Number.isFinite(Number(fine.amount))||Number(fine.amount)<0||Number(fine.amount)>10000)throw Error('El historial de multas está dañado.');
+ }
+ return migrated;
+}
+$('exportData').onclick=()=>exportBackup(true);
+$('downloadBackup').onclick=()=>exportBackup(false);
+$('importData').onchange=async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ try{
+  const parsed=JSON.parse(await file.text()),restored=validateBackup(parsed);
+  if(!confirm('Se reemplazarán los datos actuales por los del respaldo. Antes se guardará una copia automática de los datos actuales. ¿Continuar?')){e.target.value='';return;}
+  const currentBackup=JSON.stringify(backupObject());
+  localStorage.setItem(BACKUP_KEY,currentBackup);
+  download('mi-reto-78kg-respaldo-anterior-'+dateStamp()+'.json',currentBackup,'application/json;charset=utf-8');
+  localStorage.setItem(KEY,JSON.stringify(restored));
+  data=restored;render();toast('Respaldo restaurado correctamente.');
+ }catch(err){alert('No se pudo importar el respaldo: '+(err.message||'archivo inválido'));}
+ e.target.value='';
+};
+$('finesEnabled').onchange=()=>{data.fines.enabled=$('finesEnabled').checked;save();renderFines();toast(data.fines.enabled?'Multas activadas':'Multas desactivadas');};
+$('fineAmount').onchange=()=>{
+ const amount=Number($('fineAmount').value);
+ if(!Number.isFinite(amount)||amount<0||amount>10000){$('fineAmount').value=String(data.fines.amount);toast('Introduce un importe válido.');return;}
+ data.fines.amount=Math.round(amount*100)/100;save();renderFines();toast('Importe actualizado.');
+};
+$('resetFines').onclick=()=>{
+ if(!confirm('¿Reiniciar el contador? Se eliminarán las multas acumuladas, pero se conservará el registro de semanas ya procesadas para evitar multas duplicadas.'))return;
+ data.fines.records=[];save();renderFines();toast('Contador de multas reiniciado.');
+};
+async function copyText(value){try{await navigator.clipboard.writeText(value);toast('Enlace copiado.');}catch(e){prompt('Copia este enlace:',value);}}
+function sectionLink(section,weight){
+ const url=new URL(location.href);url.hash='';url.search='';url.searchParams.set('pantalla',section);if(weight!==undefined)url.searchParams.set('peso',String(weight));return url.toString();
+}
+$('copyWeightLink').onclick=()=>copyText(sectionLink('peso'));
+$('copyMetasLink').onclick=()=>copyText(sectionLink('metas'));
+$('copyActivityLink').onclick=()=>copyText(sectionLink('actividad'));
+$('createShortcut').onclick=()=>{location.href='shortcuts://create-shortcut';};
+$('shareReport').onclick=async()=>{
+ const last=latest(),lost=INITIAL-(last?last.weight:INITIAL);
+ const report='MI RETO 78 KG\nPeso actual: '+show(last?last.weight:INITIAL)+' '+data.unit+'\nPeso inicial: '+show(INITIAL)+' '+data.unit+'\nPeso perdido: '+show(lost)+' '+data.unit+'\nMeta: '+show(TARGET)+' '+data.unit+'\nRegistros: '+data.logs.length+'\nMultas acumuladas: '+money(fineTotal())+'\nGenerado: '+fmt(today());
+ if(navigator.share){try{await navigator.share({title:'Mi progreso · Mi Reto 78 KG',text:report});return;}catch(err){if(err&&err.name==='AbortError')return;}}
+ await copyText(report);
+};
+
+function icsEscape(value){return String(value).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');}
+function icsDate(date,hour='070000'){return date.replaceAll('-','')+'T'+hour;}
+function icsEvent({uid,start,summary,description,alarm=true}){
+ const lines=['BEGIN:VEVENT',`UID:${uid}`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}`,`DTSTART:${start}`,`SUMMARY:${icsEscape(summary)}`,`DESCRIPTION:${icsEscape(description)}`];
+ if(alarm)lines.push('BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:Recordatorio de Mi Reto 78 KG','END:VALARM');
+ lines.push('END:VEVENT');return lines.join('\r\n');
 }
 $('calendarReminder').onclick=()=>{
- const first=firstWeighDate().replaceAll('-','');
- const until=END.replaceAll('-','')+'T235959';
- const dayCodes=['SU','MO','TU','WE','TH','FR','SA'];
- const day=dayCodes[Number(data.weighDay)];
- const ics=[
- 'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Mi Reto 78 KG//ES',
- 'CALSCALE:GREGORIAN','BEGIN:VEVENT',
- 'UID:reto78-pesaje-weekly@mi-reto.local',
- 'DTSTAMP:20261030T120000Z',
- `DTSTART:${first}T070000`,
- 'DURATION:PT15M',
- 'SUMMARY:⚖️ Pesaje semanal - Mi Reto 78 KG',
- 'DESCRIPTION:Registra tu peso semanal en Mi Reto 78 KG.',
- `RRULE:FREQ=WEEKLY;BYDAY=${day};UNTIL=${until}`,
- 'BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY',
- 'DESCRIPTION:¡Hoy toca registrar tu peso!','END:VALARM',
- 'END:VEVENT','END:VCALENDAR'
- ].join('\r\n');
- download('recordatorio-pesaje-78kg.ics',ics,'text/calendar;charset=utf-8');
- toast('Recordatorio creado. Ábrelo en Calendario.');
-};
-$('exportData').onclick=()=>download('respaldo-mi-reto-78kg.json',JSON.stringify(data,null,2),'application/json');
-$('importData').onchange=async e=>{
- try{
-  const x=JSON.parse(await e.target.files[0].text());
-  if(!Array.isArray(x.logs)||!x.checks)throw Error();
-  data={...data,...x};save();render();toast('Respaldo restaurado');
- }catch(err){toast('El archivo no es válido');}
+ const first=firstWeighDate(),dayCodes=['SU','MO','TU','WE','TH','FR','SA'],day=dayCodes[Number(data.weighDay)],events=[];
+ events.push(['BEGIN:VEVENT','UID:mi-reto-78kg-pesajes@mi-reto.local',`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}`,`DTSTART:${icsDate(first)}`,'DURATION:PT15M','SUMMARY:Pesaje semanal - Mi Reto 78 KG','DESCRIPTION:Registra tu peso y revisa el objetivo semanal.',`RRULE:FREQ=WEEKLY;BYDAY=${day};COUNT=18`,'BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:En 30 minutos toca tu pesaje semanal.','END:VALARM','END:VEVENT'].join('\r\n'));
+ for(let i=0;i<18;i++){
+  const date=scheduledDate(i),target=weekTarget(i);
+  events.push(icsEvent({uid:`mi-reto-78kg-meta-semana-${i+1}@mi-reto.local`,start:icsDate(date,'071500'),summary:`Objetivo semana ${i+1}: ${show(target)} ${data.unit}`,description:`Referencia orientativa de peso para la semana ${i+1}. Meta final: 78 kg.`}));
+ }
+ const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Mi Reto 78 KG//ES','CALSCALE:GREGORIAN','METHOD:PUBLISH',...events,'END:VCALENDAR'].join('\r\n');
+ download('mi-reto-78kg-calendario-'+dateStamp()+'.ics',ics,'text/calendar;charset=utf-8');toast('Calendario actualizado preparado.');
 };
 $('resetData').onclick=()=>{
  if(confirm('¿Seguro que quieres borrar todos tus registros? Esta acción no se puede deshacer.')){
-  data={logs:[],checks:{},unit:'kg',weighDay:2,sound:true};save();render();toast('Datos reiniciados');
+  data=defaultData();save();render();toast('Datos reiniciados');
  }
 };
 render();
+try{
+ const params=new URLSearchParams(location.search),screen=params.get('pantalla');
+ if(['peso','metas','actividad'].includes(screen))switchScreen(screen);
+ const prefill=Number(params.get('peso'));
+ if(params.has('peso')&&Number.isFinite(prefill)&&prefill>=30&&prefill<=300){
+  $('weightInput').value=prefill.toFixed(1);switchScreen('peso');
+  setTimeout(()=>$('weightInput').scrollIntoView({behavior:'smooth',block:'center'}),250);
+ }
+}catch(e){}
 if('serviceWorker' in navigator){
- window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+ window.addEventListener('load',()=>{
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});
+ });
 }
 })();
 </script>
