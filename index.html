@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10151c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi Reto 78 KG">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<title>Mi Reto 78 KG</title>
+<style>
+:root{color-scheme:dark;--bg:#10151c;--panel:#1b2530;--line:#34414e;--text:#f4f7fa;--muted:#a8b4c1;--green:#55d6a0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);max-width:650px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;padding:22px 0 16px}
+h1{font-size:24px;margin:3px 0;letter-spacing:-1px}
+h2{font-size:18px;margin:0 0 13px}
+p{line-height:1.5}
+small,.muted{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:16px;margin-bottom:14px}
+.hero{font-size:43px;font-weight:850;letter-spacing:-2px;margin:8px 0}
+.progress{height:10px;background:#35414c;border-radius:20px;overflow:hidden}
+.progress div{height:100%;background:var(--green);border-radius:20px;width:0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+.stat{background:#121b24;padding:12px;border-radius:12px}
+.stat strong{display:block;font-size:21px;margin-top:5px}
+nav{display:flex;gap:7px;margin:15px 0}
+button{border:0;border-radius:10px;padding:12px;background:#293745;color:white;font-weight:700;cursor:pointer}
+button.primary{background:var(--green);color:#10241c}
+button.active{background:#345b4c;outline:1px solid var(--green)}
+button.danger{background:#512c32}
+nav button{flex:1;font-size:13px;padding:12px 5px}
+input,select{width:100%;padding:12px;background:#111b25;color:white;border:1px solid var(--line);border-radius:10px;margin-top:6px;font-size:16px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hidden{display:none!important}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.record,.week,.activity{padding:12px 0;border-bottom:1px solid var(--line)}
+.record:last-child,.week:last-child,.activity:last-child{border:0}
+canvas{width:100%;height:190px}
+.tag{font-size:11px;background:#263b35;color:var(--green);padding:5px 8px;border-radius:20px}
+.full{width:100%;margin-top:10px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+.check{width:20px;height:20px;accent-color:var(--green)}
+</style>
+</head>
+<body>
+<header>
+ <div><small>TU TRANSFORMACIÓN</small><h1>MI RETO <span style="color:var(--green)">78 KG</span></h1></div>
+ <div style="text-align:right"><small>FECHA META</small><br><strong>31 MAR 2027</strong></div>
+</header>
+
+<section class="card">
+ <div class="row"><small>MI PESO ACTUAL</small><span class="tag" id="status">En progreso</span></div>
+ <div class="row" style="align-items:end">
+  <div class="hero" id="current">90.7</div>
+  <strong id="unitText">kg</strong>
+ </div>
+ <div class="progress"><div id="bar"></div></div>
+ <div class="row" style="margin-top:7px"><small id="percent">0% completado</small><small>Meta: 78 kg</small></div>
+ <div class="stats">
+  <div class="stat"><small>Perdidos</small><strong id="lost">0.0 kg</strong></div>
+  <div class="stat"><small>Restantes</small><strong id="remaining">12.7 kg</strong></div>
+ </div>
+ <small id="deadline"></small>
+</section>
+
+<nav>
+ <button class="active" data-page="peso">PESO</button>
+ <button data-page="semanas">METAS</button>
+ <button data-page="actividad">ACTIVIDAD</button>
+</nav>
+
+<main id="peso">
+ <section class="card">
+  <h2>Registrar mi peso</h2>
+  <div class="grid">
+   <label>Peso (<span class="unit">kg</span>)
+    <input id="weight" type="number" min="30" max="300" step="0.1" placeholder="Ej. 89.5">
+   </label>
+   <label>Fecha
+    <input id="weightDate" type="date">
+   </label>
+  </div>
+  <button class="primary full" id="saveWeight">Guardar peso</button>
+  <p id="weightMessage" class="muted"></p>
+ </section>
+ <section class="card">
+  <h2>Evolución de mi peso</h2>
+  <canvas id="chart" width="560" height="220"></canvas>
+  <small>La gráfica muestra tus registros y el peso inicial.</small>
+ </section>
+ <section class="card">
+  <h2>Historial</h2>
+  <div id="history" class="muted">Todavía no tienes registros.</div>
+ </section>
+</main>
+
+<main id="semanas" class="hidden">
+ <section class="card">
+  <h2>Mi objetivo semanal</h2>
+  <p class="muted">Objetivos orientativos, distribuidos progresivamente. No son garantías ni motivo para hacer dietas extremas.</p>
+  <div id="currentWeek"></div>
+ </section>
+ <section class="card">
+  <h2>Calendario de objetivos</h2>
+  <div id="weeks"></div>
+ </section>
+</main>
+
+<main id="actividad" class="hidden">
+ <section class="card">
+  <h2>Entrenamientos semanales</h2>
+  <p class="muted">Marca las sesiones que completes. Adapta el esfuerzo a tu recuperación.</p>
+  <div id="activities"></div>
+  <div class="progress"><div id="activityBar"></div></div>
+  <small id="activitySummary"></small>
+ </section>
+ <section class="card">
+  <h2>Mi progresión de carrera</h2>
+  <p class="muted">Dos sesiones semanales. Antes y después, camina suavemente cinco minutos.</p>
+  <div id="running"></div>
+ </section>
+ <section class="card">
+  <h2>Recuperación</h2>
+  <p class="muted">Si aparece dolor, mareo o agotamiento excesivo, detén el entrenamiento. No intentes compensar sesiones perdidas. Repite una semana de carrera si todavía no puedes completar el nivel cómodamente.</p>
+ </section>
+</main>
+
+<section class="card">
+ <h2>Mis datos</h2>
+ <button class="full" id="export">Exportar respaldo</button>
+ <label>Restaurar un respaldo JSON<input id="import" type="file" accept=".json,application/json"></label>
+ <button class="full" id="unit">Cambiar a lb</button>
+ <button class="full danger" id="reset">Borrar todos mis datos</button>
+ <small id="backupMessage"></small>
+</section>
+<footer>MI RETO 78 KG · Tus datos personales permanecen en este dispositivo.</footer>
+
+<script>
+const START='2026-12-01',END='2027-03-31',INITIAL=90.7,TARGET=78;
+const KEY='mi-reto-78kg-v1';
+let data={logs:[],checks:{},unit:'kg'};
+try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved)data={...data,...saved}}catch(e){}
+const $=id=>document.getElementById(id);
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data));$('backupMessage').textContent='Datos guardados.'}catch(e){$('backupMessage').textContent='No se pudo guardar. Exporta un respaldo.'}};
+const asDate=s=>new Date(s+'T12:00:00');
+const fmt=s=>asDate(s).toLocaleDateString('es-PA',{day:'numeric',month:'short',year:'numeric'});
+const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+const days=(a,b)=>Math.round((asDate(b)-asDate(a))/86400000);
+const sorted=()=>[...data.logs].sort((a,b)=>a.date.localeCompare(b.date));
+const latest=()=>sorted().at(-1);
+const toDisplay=n=>data.unit==='lb'?(n*2.20462).toFixed(1):n.toFixed(1);
+const fromDisplay=n=>data.unit==='lb'?n/2.20462:n;
+const weekNumber=()=>Math.max(0,Math.min(17,Math.floor(days(START,today())/7)));
+const target=i=>INITIAL-(INITIAL-TARGET)*i/17;
+const weekKey=()=>START+'-'+weekNumber();
+
+function render(){
+ let latestLog=latest(),current=latestLog?latestLog.weight:INITIAL;
+ let lost=INITIAL-current,progress=Math.max(0,Math.min(100,lost/(INITIAL-TARGET)*100));
+ $('current').textContent=toDisplay(current);
+ $('unitText').textContent=data.unit;
+ $('lost').textContent=toDisplay(lost)+' '+data.unit;
+ $('remaining').textContent=toDisplay(Math.max(0,current-TARGET))+' '+data.unit;
+ $('bar').style.width=progress+'%';
+ $('percent').textContent=progress.toFixed(1)+'% completado';
+ $('status').textContent=current<=TARGET?'¡Meta alcanzada!':'En progreso';
+ $('deadline').textContent=latestLog?'Último registro: '+fmt(latestLog.date):'Peso inicial: 90.7 kg';
+ document.querySelectorAll('.unit').forEach(e=>e.textContent=data.unit);
+ $('unit').textContent=data.unit==='kg'?'Cambiar a lb':'Cambiar a kg';
+
+ $('history').innerHTML=sorted().length?sorted().slice().reverse().map(x=>
+ `<div class="record row"><span>${fmt(x.date)}</span><strong>${toDisplay(x.weight)} ${data.unit}</strong><button data-del="${x.date}">Eliminar</button></div>`
+ ).join(''):'Todavía no tienes registros.';
+ drawChart();
+
+ let wn=weekNumber();
+ $('currentWeek').innerHTML=`<div class="row"><span>Semana ${wn+1} de 18</span><strong>${toDisplay(target(wn))} ${data.unit}</strong></div><small>Objetivo orientativo</small>`;
+ $('weeks').innerHTML=Array.from({length:18},(_,i)=>{
+ let start=asDate(START);start.setDate(start.getDate()+i*7);
+ let end=new Date(start);end.setDate(end.getDate()+6);
+ if(i===17)end=asDate(END);
+ let a=start.toISOString().slice(0,10),b=end.toISOString().slice(0,10);
+ let match=sorted().filter(x=>x.date>=a&&x.date<=b).at(-1);
+ return `<div class="week"><div class="row"><strong>Semana ${i+1}</strong><small>${fmt(a)} – ${fmt(b)}</small></div><div class="row"><small>Meta de peso</small><strong>${toDisplay(target(i))} ${data.unit}</strong></div><div class="row"><small>Peso registrado</small><strong>${match?toDisplay(match.weight)+' '+data.unit:'Pendiente'}</strong></div></div>`;
+ }).join('');
+
+ const labels=['Carrera / caminata 1','Carrera / caminata 2','Caminata adicional','Boxeo 1','Boxeo 2','Boxeo 3'];
+ let checks=data.checks[weekKey()]||{};
+ $('activities').innerHTML=labels.map((x,i)=>`<label class="row activity"><span>${x}</span><input class="check" type="checkbox" data-check="${i}" ${checks[i]?'checked':''}></label>`).join('');
+ let count=Object.values(checks).filter(Boolean).length;
+ $('activityBar').style.width=(count/6*100)+'%';
+ $('activitySummary').textContent=count+' de 6 sesiones marcadas';
+
+ const runs=[
+ '3 caminatas rápidas de 25 minutos',
+ '1 min trote + 2 min caminar × 8',
+ '90 s trote + 2 min caminar × 7',
+ '2 min trote + 2 min caminar × 7',
+ '3 min trote + 2 min caminar × 6',
+ '4 min trote + 2 min caminar × 5',
+ '5 min trote + 2 min caminar × 4',
+ '8 min trote + 2 min caminar × 3',
+ '10 min trote + 2 min caminar × 2',
+ '12 min trote + 2 min caminar × 2',
+ '15 min trote + 2 min caminar × 2',
+ '18 min trote + 2 min caminar + 5 min trote',
+ '20 min trote continuo','22 min trote continuo',
+ '25 min trote continuo','28 min trote continuo','30 min trote continuo'
+ ];
+ $('running').innerHTML=runs.map((x,i)=>`<div class="week"><div class="row"><strong>Semana ${i+1}</strong>${i===wn?'<span class="tag">Actual</span>':''}</div><small>${x}</small></div>`).join('');
+}
+function drawChart(){
+ const c=$('chart'),ctx=c.getContext('2d'),arr=[{date:START,weight:INITIAL},...sorted()];
+ ctx.clearRect(0,0,c.width,c.height);
+ if(!arr.length)return;
+ let min=Math.min(TARGET,...arr.map(x=>x.weight))-1,max=Math.max(INITIAL,...arr.map(x=>x.weight))+1;
+ ctx.strokeStyle='#52616e';ctx.fillStyle='#a8b4c1';ctx.font='12px sans-serif';
+ [0,1,2,3].forEach(i=>{let y=20+i*55;ctx.beginPath();ctx.moveTo(35,y);ctx.lineTo(545,y);ctx.stroke()});
+ ctx.strokeStyle='#55d6a0';ctx.lineWidth=4;ctx.beginPath();
+ arr.forEach((x,i)=>{let px=35+(arr.length===1?0:i/(arr.length-1)*510),py=20+(max-x.weight)/(max-min)*165;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)});
+ ctx.stroke();
+ arr.forEach((x,i)=>{let px=35+(arr.length===1?0:i/(arr.length-1)*510),py=20+(max-x.weight)/(max-min)*165;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fillStyle='#55d6a0';ctx.fill()});
+ ctx.fillStyle='#a8b4c1';ctx.fillText(toDisplay(max)+' '+data.unit,35,14);ctx.fillText(toDisplay(min)+' '+data.unit,35,215);
+}
+$('saveWeight').onclick=()=>{
+ let n=Number($('weight').value),date=$('weightDate').value;
+ if(!Number.isFinite(n)||n<30||n>300||!date){$('weightMessage').textContent='Introduce un peso y fecha válidos.';return}
+ if(date>today()){$('weightMessage').textContent='No puedes registrar una fecha futura.';return}
+ let value=fromDisplay(n),idx=data.logs.findIndex(x=>x.date===date);
+ if(idx>=0)data.logs[idx].weight=value;else data.logs.push({date,weight:value});
+ save();render();$('weight').value='';$('weightMessage').textContent='¡Registro guardado!';
+};
+$('history').onclick=e=>{
+ let btn=e.target.closest('[data-del]');if(!btn)return;
+ if(confirm('¿Eliminar este registro?')){data.logs=data.logs.filter(x=>x.date!==btn.dataset.del);save();render()}
+};
+$('activities').onchange=e=>{
+ let el=e.target.closest('[data-check]');if(!el)return;
+ data.checks[weekKey()]??={};data.checks[weekKey()][el.dataset.check]=el.checked;save();render();
+};
+document.querySelectorAll('[data-page]').forEach(btn=>btn.onclick=()=>{
+ document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b===btn));
+ ['peso','semanas','actividad'].forEach(id=>$(id).classList.toggle('hidden',id!==btn.dataset.page));
+});
+$('unit').onclick=()=>{data.unit=data.unit==='kg'?'lb':'kg';save();render()};
+$('export').onclick=()=>{
+ let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ let a=document.createElement('a'),url=URL.createObjectURL(blob);
+ a.href=url;a.download='mi-reto-78kg-respaldo.json';a.click();URL.revokeObjectURL(url);
+};
+$('import').onchange=async e=>{
+ try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.logs)||!x.checks)throw Error();
+ data=x;save();render();$('backupMessage').textContent='Respaldo restaurado.'}
+ catch(err){$('backupMessage').textContent='El archivo no es válido.'}
+};
+$('reset').onclick=()=>{
+ if(confirm('¿Seguro que quieres borrar todos los registros? Esta acción no se puede deshacer.')){
+ data={logs:[],checks:{},unit:'kg'};save();render();
+ }
+};
+$('weightDate').value=today();render();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));
+</script>
+</body>
+</html>
