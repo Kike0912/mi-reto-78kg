@@ -1,14 +1,33 @@
 {
+  "id": "./",
   "name": "Mi Reto 78 KG",
   "short_name": "Reto 78 KG",
   "description": "Seguimiento personal de peso y actividad física",
-  "start_url": "./",
+  "start_url": "./?pantalla=peso",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#10151c",
-  "theme_color": "#10151c",
+  "background_color": "#101712",
+  "theme_color": "#101712",
   "icons": [
+    {
+      "src": "./icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "./icon.svg",
       "sizes": "any",
